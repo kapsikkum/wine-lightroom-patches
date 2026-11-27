@@ -1,0 +1,44 @@
+--- a/dlls/win32u/window.c
++++ b/dlls/win32u/window.c
+@@ -3946,16 +3946,11 @@
+     }
+     winpos->hwnd = win->handle;  /* make it a full handle */
+ 
+-    /* Finally make sure that all coordinates are valid */
+-    if (winpos->x < -32768) winpos->x = -32768;
+-    else if (winpos->x > 32767) winpos->x = 32767;
+-    if (winpos->y < -32768) winpos->y = -32768;
+-    else if (winpos->y > 32767) winpos->y = 32767;
+-
++    /* Windows 7 and later keep 32-bit window positions and sizes. Clamping
++     * to 16 bits breaks wide scrolled child windows, such as Lightroom
++     * Classic's filmstrip, which is moved to large negative offsets. */
+     if (winpos->cx < 0) winpos->cx = 0;
+-    else if (winpos->cx > 32767) winpos->cx = 32767;
+     if (winpos->cy < 0) winpos->cy = 0;
+-    else if (winpos->cy > 32767) winpos->cy = 32767;
+ 
+     parent = NtUserGetAncestor( winpos->hwnd, GA_PARENT );
+     if (!is_window_visible( parent )) winpos->flags |= SWP_NOREDRAW;
+@@ -4138,20 +4133,11 @@
+         }
+     }
+ 
+-    /* Make sure that coordinates are valid for WM_WINDOWPOSCHANGING */
+-    if (!(winpos->flags & SWP_NOMOVE))
+-    {
+-        if (winpos->x < -32768) winpos->x = -32768;
+-        else if (winpos->x > 32767) winpos->x = 32767;
+-        if (winpos->y < -32768) winpos->y = -32768;
+-        else if (winpos->y > 32767) winpos->y = 32767;
+-    }
++    /* Make sure that sizes are valid for WM_WINDOWPOSCHANGING */
+     if (!(winpos->flags & SWP_NOSIZE))
+     {
+         if (winpos->cx < 0) winpos->cx = 0;
+-        else if (winpos->cx > 32767) winpos->cx = 32767;
+         if (winpos->cy < 0) winpos->cy = 0;
+-        else if (winpos->cy > 32767) winpos->cy = 32767;
+     }
+ 
+     context = set_thread_dpi_awareness_context( get_window_dpi_awareness_context( winpos->hwnd ));
